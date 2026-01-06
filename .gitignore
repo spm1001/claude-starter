@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+
+# Environment
+.env
+.env.local
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Credentials
+*.pem
+*.key
+credentials.json
+token.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
