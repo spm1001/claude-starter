@@ -5,7 +5,7 @@ Get your Claude Code environment configured the team way.
 ## Quick Start
 
 1. Clone this repo to `~/Repos/`
-2. Open Claude in this folder: `cd ~/Repos/itv-claude-starter && claude`
+2. Open Claude in this folder: `cd ~/Repos/claude-starter && claude`
 3. Say "help me set up"
 
 Claude will walk you through the rest.

@@ -1,4 +1,4 @@
-# itv-claude-starter
+# claude-starter
 
 Team onboarding repo for Claude Code. Clone → run setup → be productive.
 
