@@ -33,6 +33,18 @@ Claude will walk you through the rest.
 - Google Drive desktop sync
 - Todoist subscription
 
+## Skill Setup
+
+### Todoist GTD
+
+Authenticate with Todoist (one-time):
+```bash
+~/.claude/.venv/bin/python skills/todoist-gtd/scripts/todoist.py auth
+```
+Browser opens → click "Authorize" → done.
+
+For SSH sessions, use `--manual` flag.
+
 ## Questions?
 
 Ask Sameer or post in #mit-claude-code
