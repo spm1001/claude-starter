@@ -1,13 +1,22 @@
 # claude-starter
 
-Team onboarding repo for Claude Code. Clone → run setup → be productive.
+Team onboarding repo for Claude Code. The "front door" for getting set up.
 
-## Purpose
+## First-Time Setup
 
-This is THE repo to share with team members (and family). Contains:
-- Document skills (docx, pdf, xlsx, pptx)
+When a user says "help me set up" or runs `/setup`, use the **setup skill** to configure their environment. The skill handles:
+
+1. **Tier 1** (this repo): Document skills + Todoist GTD
+2. **Tier 2** (claude-advanced): Session lifecycle (/open, /ground, /close) + Beads
+3. **Tier 3** (claude-mem): Searchable memory across sessions
+
+See `skills/setup/SKILL.md` for detailed instructions.
+
+## What's Here
+
+- Document skills (docx, pdf, xlsx)
 - Todoist GTD with OAuth authentication
-- ITV-specific skills
+- The `/setup` installer skill
 
 ## Gotchas
 
@@ -35,10 +44,12 @@ If this repo ever goes public, regenerate the client secret at developer.todoist
 | `todoist-gtd` | Todoist integration with GTD coaching, OAuth auth |
 | `docx`, `pdf`, `xlsx`, `pptx` | Document creation and manipulation |
 
-## Setup
+## Manual Todoist Auth (if needed)
+
+If /setup doesn't handle Todoist auth automatically:
 
 ```bash
-~/.claude/.venv/bin/python skills/todoist-gtd/scripts/todoist.py auth
+~/.claude/.venv/bin/python ~/Repos/claude-starter/skills/todoist-gtd/scripts/todoist.py auth
 ```
 
 Browser opens → click Authorize → done.

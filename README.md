@@ -1,49 +1,31 @@
-# ITV Claude Code Starter
+# Claude Starter
 
-Get your Claude Code environment configured the team way.
+Set up Claude Code for your team.
 
 ## Quick Start
 
-1. Clone this repo to `~/Repos/`
-2. Open Claude in this folder: `cd ~/Repos/claude-starter && claude`
-3. Say "help me set up"
+```bash
+git clone https://github.com/spm1001/claude-starter ~/Repos/claude-starter
+cd ~/Repos/claude-starter
+claude
+```
 
-Claude will walk you through the rest.
+Then say "help me set up" or run `/setup`.
 
 ## What's Included
 
-**Tier 1 (this repo):**
-- Document skills (docx, xlsx, pdf)
-- Todoist GTD skill (MCP-free)
-- Google Workspace skill
-- myitv search
-
-**Tier 2 (claude-modus):**
-- Session lifecycle (`/open`, `/ground`, `/close`)
-- Beads multi-session tracking
-
-**Tier 3 (claude-memory):**
-- Searchable history across all sessions
+| Tier | What You Get | Source |
+|------|--------------|--------|
+| **1** | Document skills (docx, pdf, xlsx) + Todoist GTD | This repo |
+| **2** | Session lifecycle (`/open`, `/ground`, `/close`) + Beads | claude-advanced |
+| **3** | Searchable memory across all sessions | claude-mem |
 
 ## Prerequisites
 
-- Homebrew installed
-- GitHub CLI (`gh`) installed and authenticated
-- `~/Repos/` folder (local, not cloud-synced)
-- Google Drive desktop sync
-- Todoist subscription
-
-## Skill Setup
-
-### Todoist GTD
-
-Authenticate with Todoist (one-time):
-```bash
-~/.claude/.venv/bin/python skills/todoist-gtd/scripts/todoist.py auth
-```
-Browser opens → click "Authorize" → done.
-
-For SSH sessions, use `--manual` flag.
+- Homebrew
+- GitHub CLI (`gh auth status` should show authenticated)
+- `~/Repos/` directory (local, not cloud-synced)
+- uv for Python (`brew install uv`)
 
 ## Questions?
 
