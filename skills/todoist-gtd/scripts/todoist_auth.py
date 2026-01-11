@@ -2,7 +2,8 @@
 """
 Todoist OAuth authentication module.
 
-Provides OAuth 2.0 authentication flow for Todoist, storing tokens in macOS Keychain.
+Provides OAuth 2.0 authentication flow for Todoist.
+Stores tokens portably: env var, macOS Keychain, or file (~/.todoist-token).
 Supports both auto mode (localhost callback) and manual mode (paste redirect URL).
 
 Usage:
@@ -38,8 +39,8 @@ OAUTH_PORT = 8080
 SCOPES = ["data:read_write"]
 AUTH_TIMEOUT_SECONDS = 300  # 5 minutes
 
-# Keychain configuration (same as existing todoist.py)
-KEYCHAIN_SERVICE = "todoist-api-key"
+# Import portable secrets management
+from todoist_secrets import get_token_quiet, store_token
 
 
 def _load_credentials_from_file() -> tuple[str, str]:
@@ -61,43 +62,6 @@ def _build_auth_url(client_id: str, scopes: list, state: str) -> str:
         "state": state,
     }
     return f"https://todoist.com/oauth/authorize?{urlencode(params)}"
-
-
-def _store_token(token: str) -> bool:
-    """Store token in macOS Keychain."""
-    user = os.environ.get("USER", "")
-    try:
-        # Delete existing entry if present (ignore errors)
-        subprocess.run(
-            ["security", "delete-generic-password", "-a", user, "-s", KEYCHAIN_SERVICE],
-            capture_output=True,
-            check=False
-        )
-        # Add new entry
-        subprocess.run(
-            ["security", "add-generic-password", "-a", user, "-s", KEYCHAIN_SERVICE, "-w", token],
-            check=True,
-            capture_output=True
-        )
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error storing token in Keychain: {e}", file=sys.stderr)
-        return False
-
-
-def _get_token() -> Optional[str]:
-    """Get token from macOS Keychain."""
-    user = os.environ.get("USER", "")
-    try:
-        result = subprocess.run(
-            ["security", "find-generic-password", "-a", user, "-s", KEYCHAIN_SERVICE, "-w"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError:
-        return None
 
 
 def _generate_state() -> str:
@@ -356,7 +320,7 @@ def authenticate(manual: bool = False, code: Optional[str] = None) -> bool:
         print('     {"client_id": "your_id", "client_secret": "your_secret"}', file=sys.stderr)
         print("\nAlternatively, use a personal API token:", file=sys.stderr)
         print("  1. Get your token from: https://todoist.com/prefs/integrations", file=sys.stderr)
-        print('  2. Run: security add-generic-password -a "$USER" -s "todoist-api-key" -w "TOKEN"', file=sys.stderr)
+        print('  2. Set: export TODOIST_API_KEY="TOKEN" in ~/.bashrc or ~/.secrets', file=sys.stderr)
         return False
 
     state = _generate_state()
@@ -382,11 +346,10 @@ def authenticate(manual: bool = False, code: Optional[str] = None) -> bool:
         return False
 
     # Store token
-    if not _store_token(token):
+    if not store_token(token):
         return False
 
     print("\n✓ Successfully authenticated with Todoist!")
-    print("  Token stored in macOS Keychain.")
     return True
 
 
@@ -398,7 +361,7 @@ def get_auth_status() -> dict:
         - authenticated: bool
         - message: str describing status
     """
-    token = _get_token()
+    token = get_token_quiet()
 
     if not token:
         return {

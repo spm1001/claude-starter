@@ -22,8 +22,9 @@ Commands:
 
 Authentication:
     Run `todoist.py auth` to authenticate via OAuth (recommended).
-    Alternatively, manually add a token to macOS Keychain:
-        security add-generic-password -a "$USER" -s "todoist-api-key" -w "YOUR_TOKEN"
+    Or set TODOIST_API_KEY environment variable.
+    On macOS, can also use Keychain:
+        security add-generic-password -a "$USER" -s "todoist-api-key" -w "TOKEN"
 """
 
 import argparse
@@ -32,27 +33,10 @@ import subprocess
 import sys
 from typing import Any
 
+from todoist_secrets import get_token
+
 # Lazy import to allow --help without SDK installed
 TodoistAPI = None
-
-
-def get_api_token() -> str:
-    """Get Todoist API token from macOS Keychain."""
-    try:
-        result = subprocess.run(
-            ["security", "find-generic-password", "-a", subprocess.os.environ.get("USER", ""), "-s", "todoist-api-key", "-w"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError:
-        print("Not authenticated with Todoist.", file=sys.stderr)
-        print("\nRun `todoist.py auth` to connect your Todoist account.", file=sys.stderr)
-        print("\nAlternatively, manually add a token:", file=sys.stderr)
-        print('  1. Get your token from: https://todoist.com/prefs/integrations', file=sys.stderr)
-        print('  2. Run: security add-generic-password -a "$USER" -s "todoist-api-key" -w "YOUR_TOKEN"', file=sys.stderr)
-        sys.exit(1)
 
 
 def get_api():
@@ -67,7 +51,7 @@ def get_api():
             print("\nInstall with: pip install todoist-api-python", file=sys.stderr)
             sys.exit(1)
 
-    token = get_api_token()
+    token = get_token()
     return TodoistAPI(token)
 
 
