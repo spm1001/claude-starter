@@ -44,7 +44,7 @@ A popup appears. Click **Install**, then **Agree**.
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-### Step 4: Start Claude
+### Step 4: Start Claude and set up
 
 ```bash
 claude
@@ -52,13 +52,11 @@ claude
 
 First time, it will ask you to log in. Follow the prompts.
 
-### Step 5: Let Claude do the rest
-
 Once Claude is running, say:
 
-> **help me set up**
+> **help me set up using https://github.com/spm1001/claude-starter**
 
-Claude will install any missing tools (Homebrew, GitHub CLI, etc.) and configure everything.
+Claude will clone the repo, install any missing tools, and configure everything.
 
 ---
 
