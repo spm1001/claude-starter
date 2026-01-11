@@ -21,9 +21,9 @@ Never used Terminal before? Follow these steps exactly.
 ### How to copy-paste
 
 For each grey code box below:
-1. Click the code to select it
+1. **Triple-click** inside the box to select all the text
 2. Press `Cmd+C` to copy
-3. In Terminal, press `Cmd+V` to paste
+3. In Terminal, press `Cmd+V` to paste (text may not appear until you press Enter)
 4. Press `Enter` to run it
 
 ---
@@ -186,7 +186,13 @@ help me set up
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Claude will install any missing tools (Homebrew, GitHub CLI, etc.) and configure everything.
+Claude will:
+- Ask which tier you want (1, 2, or 3)
+- Install missing tools (Homebrew, GitHub CLI, Python)
+- For Tier 2/3: ask you to log into GitHub (follow the browser prompts)
+- Create all the necessary configuration
+
+**When it's done**, type `/skills` to verify — you should see your new skills listed.
 
 ---
 
