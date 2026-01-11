@@ -18,45 +18,63 @@ Then say "help me set up" or run `/setup`.
 
 Never used Terminal before? Follow these steps exactly.
 
-### How to copy-paste commands
+### How to copy-paste
 
-1. Open this page in your browser
-2. For each grey code box, click the code then `Cmd+C` to copy
-3. In Terminal, `Cmd+V` to paste, then press `Enter`
+For each grey code box below:
+1. Click the code to select it
+2. Press `Cmd+C` to copy
+3. In Terminal, press `Cmd+V` to paste
+4. Press `Enter` to run it
 
 ### Step 1: Open Terminal
 
-Press `Cmd + Space`, type **Terminal**, press `Enter`.
+Open **Finder** → **Applications** → **Utilities** → double-click **Terminal**.
+
+A window with a command prompt appears.
 
 ### Step 2: Install Xcode tools
 
-```bash
+Type this and press Enter:
+
+```
 xcode-select --install
 ```
 
 A popup appears. Click **Install**, then **Agree**.
 
-**Wait 5-10 minutes** — this downloads essential developer tools.
+**Wait 5-10 minutes** for the download to complete. You'll see "The software was installed" when done.
 
 ### Step 3: Install Claude Code
 
-```bash
+Type this and press Enter:
+
+```
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-### Step 4: Start Claude and set up
+When it finishes, you'll see a message about adding Claude to your PATH. Copy and run the command it shows (starts with `export PATH=...`).
 
-```bash
+Then **close Terminal and reopen it** so the PATH takes effect.
+
+### Step 4: Start Claude
+
+Type this and press Enter:
+
+```
 claude
 ```
 
-First time, it will ask you to log in. Follow the prompts.
+First time, it asks you to log in. Follow the prompts in your browser.
 
-Once Claude is running, say:
+### Step 5: Set up your tools
 
-> **help me set up using bit.ly/cc-mit**
+Once Claude is running, type this message:
 
-Claude will clone the repo, install any missing tools, and configure everything.
+```
+help me set up using bit.ly/cc-mit
+```
+
+Claude will install any missing tools and configure everything for you.
 
 ---
 
