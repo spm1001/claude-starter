@@ -30,16 +30,42 @@ The installer skill for Claude Code. Configures your environment with skills, sc
 
 Each tier builds on the previous. Tier 2 requires Tier 1. Tier 3 requires Tier 2.
 
-## Prerequisites
-
-Before running /setup, ensure:
-
-1. **Homebrew** installed (`brew --version`)
-2. **GitHub CLI** installed and authenticated (`gh auth status`)
-3. **~/Repos/** directory exists (local, not cloud-synced)
-4. **uv** installed for Python (`uv --version`) — install via `brew install uv`
-
 ## Workflow
+
+### Phase 0: Install Missing Dependencies
+
+Check for and install required tools. Ask user permission before installing anything.
+
+```bash
+# Check what's missing
+command -v brew &>/dev/null || echo "MISSING: Homebrew"
+command -v gh &>/dev/null || echo "MISSING: GitHub CLI"
+command -v uv &>/dev/null || echo "MISSING: uv"
+```
+
+**If Homebrew is missing:**
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+After install, user needs to run the "Next steps" commands shown (adds brew to PATH).
+They may need to restart Terminal or run `eval "$(/opt/homebrew/bin/brew shellenv)"`.
+
+**If GitHub CLI is missing:**
+```bash
+brew install gh
+gh auth login
+```
+Guide user through: GitHub.com → HTTPS → Yes → Login with browser
+
+**If uv is missing:**
+```bash
+brew install uv
+```
+
+**Create workspace directory:**
+```bash
+mkdir -p ~/Repos
+```
 
 ### Phase 1: Gather Current State
 

@@ -2,7 +2,7 @@
 
 Set up Claude Code for your team.
 
-## Already have Claude Code installed?
+## Already have Claude Code?
 
 ```bash
 git clone https://github.com/spm1001/claude-starter ~/Repos/claude-starter
@@ -18,19 +18,17 @@ Then say "help me set up" or run `/setup`.
 
 Never used Terminal before? Follow these steps exactly.
 
-### How to use these instructions
+### How to copy-paste commands
 
 1. Open this page in your browser
-2. For each grey code box below, click it to select, then `Cmd+C` to copy
+2. For each grey code box, click the code then `Cmd+C` to copy
 3. In Terminal, `Cmd+V` to paste, then press `Enter`
 
 ### Step 1: Open Terminal
 
 Press `Cmd + Space`, type **Terminal**, press `Enter`.
 
-A window with a command prompt appears. This is where you'll paste commands.
-
-### Step 2: Install Xcode Command Line Tools
+### Step 2: Install Xcode tools
 
 ```bash
 xcode-select --install
@@ -38,57 +36,29 @@ xcode-select --install
 
 A popup appears. Click **Install**, then **Agree**.
 
-**Wait 5-10 minutes** for the download to complete.
+**Wait 5-10 minutes** — this downloads essential developer tools.
 
-### Step 3: Install Homebrew
+### Step 3: Install Claude Code
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-It will ask for your password (the one you use to log into your Mac). Type it and press Enter. You won't see the characters — that's normal.
-
-**Wait 5-10 minutes.** When done, it shows "Next steps".
-
-Run the commands it shows (they look like `echo 'eval...'` and `eval...`). These add Homebrew to your Terminal.
-
-### Step 4: Install required tools
+### Step 4: Start Claude
 
 ```bash
-brew install gh uv node
-```
-
-### Step 5: Install Claude Code
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-### Step 6: Log into GitHub
-
-```bash
-gh auth login
-```
-
-When prompted:
-- Account: **GitHub.com**
-- Protocol: **HTTPS**
-- Authenticate: **Yes**
-- Method: **Login with a web browser**
-
-Follow the browser prompts to complete login.
-
-### Step 7: Create workspace and get started
-
-```bash
-mkdir -p ~/Repos
-git clone https://github.com/spm1001/claude-starter ~/Repos/claude-starter
-cd ~/Repos/claude-starter
 claude
 ```
 
-Claude Code starts. Say **"help me set up"** and Claude will configure everything.
+First time, it will ask you to log in. Follow the prompts.
+
+### Step 5: Let Claude do the rest
+
+Once Claude is running, say:
+
+> **help me set up**
+
+Claude will install any missing tools (Homebrew, GitHub CLI, etc.) and configure everything.
 
 ---
 
@@ -103,3 +73,7 @@ Claude Code starts. Say **"help me set up"** and Claude will configure everythin
 ## Questions?
 
 Ask Sameer or post in #mit-claude-code
+
+---
+
+Sources: [Claude Code Setup Docs](https://code.claude.com/docs/en/setup)
