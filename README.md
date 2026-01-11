@@ -54,7 +54,7 @@ First time, it will ask you to log in. Follow the prompts.
 
 Once Claude is running, say:
 
-> **help me set up using https://github.com/spm1001/claude-starter**
+> **help me set up using bit.ly/cc-mit**
 
 Claude will clone the repo, install any missing tools, and configure everything.
 
