@@ -1,5 +1,6 @@
 ---
 name: todoist-gtd
+user-invocable: false
 description: >
   MCP-free Todoist integration with GTD coaching. Uses Python CLI (scripts/todoist.py) to query
   Todoist API v1 directly. Provides semantic understanding of the user's GTD structure (outcomes
@@ -205,6 +206,8 @@ scripts/todoist.py projects | jq '.[] | select(.name == "@Claude")'
 scripts/todoist.py tasks --project-id "<claude-inbox-id>"
 ```
 
+**⚠️ TRIAGE CRITICAL:** Inbox items (especially forwarded emails) often have context in **comments**, not the task itself. ALWAYS run `comments --task-id <id>` before deciding to skip an item as "context-lost". See [references/PATTERNS.md](references/PATTERNS.md) for the full triage workflow.
+
 ### Filter with Todoist Syntax
 ```bash
 # Today's tasks (including overdue)
@@ -394,19 +397,24 @@ Surface these concerns when analyzing data:
 
 1. **Query the @Claude inbox:**
    ```bash
-   # @Claude project ID: 6cvq5WW3jGJ3Gp7P
-   scripts/todoist.py tasks --project-id "6cvq5WW3jGJ3Gp7P"
+   scripts/todoist.py tasks --project "@Claude"
    ```
 
-2. **Surface any items:**
-   - "You have X items in @Claude..."
-   - Process during session → complete when done
+2. **Surface items:** "You have X items in @Claude..."
+
+3. **For triage:** Follow the workflow in [references/PATTERNS.md](references/PATTERNS.md#inbox-triage-workflow):
+   - Check comments for EACH item before deciding (forwarded emails hide context there)
+   - Decide: bead, skip, move, or do now
+   - Execute with `done`, `update --project`, etc.
 
 ### Email Forwarding
 
-Each project has a unique email address for forwarding items:
-- Forward email → becomes task with subject as title, body as comment (not description!)
-- Next Claude session → item surfaces automatically
+When emails are forwarded to a Todoist project's email address:
+- Subject → task `content` (often cryptic)
+- Body → **comment** (the actual context!)
+- Attachments → on that comment
+
+**⚠️ A forwarded email with no comments checked = context lost.** Always run `comments --task-id <id>` before skipping.
 
 ## Common Analysis Workflows
 
@@ -467,6 +475,10 @@ Surface: "Alex has X outcomes, Y waiting-fors. [Summary of each]"
 | Create outcome | `scripts/todoist.py add-section "name" --project-id "<id>"` |
 | Create task | `scripts/todoist.py add "content" --section-id "<id>"` |
 | Complete task | `scripts/todoist.py done "<task-id>"` |
+| Rename task | `scripts/todoist.py update "<task-id>" --content "new name"` |
+| Move to project | `scripts/todoist.py update "<task-id>" --project "@Ping"` |
+| Move to section | `scripts/todoist.py update "<task-id>" --section "Now"` |
+| Move to project+section | `scripts/todoist.py update "<task-id>" --project "@Work" --section "Now"` |
 
 ## Success Metrics
 
