@@ -11,13 +11,14 @@ Commands:
     auth --manual       Use manual mode (for SSH)
     projects            List all projects
     sections            List sections (--project-id to filter)
-    tasks               List tasks (with filters)
-    task ID             Get a single task
-    filter QUERY        Filter tasks using Todoist filter syntax
+    tasks               List tasks with comments inline
+    task ID             Get single task with comments inline
+    filter QUERY        Filter tasks (no comments - can return many)
     done ID             Complete a task
     add CONTENT         Create a new task
+    update ID           Update/move task (--content, --project, --section, etc.)
     add-section NAME    Create a new section (requires --project-id)
-    comments            Get comments (requires --task-id or --project-id)
+    comments            Get comments standalone (rarely needed)
     collaborators       Get project collaborators (requires --project-id)
 
 Authentication:
@@ -98,6 +99,31 @@ def resolve_project(api, name_or_id: str) -> str:
     sys.exit(1)
 
 
+def resolve_section(api, project_id: str, name_or_id: str) -> str:
+    """Resolve a section name to ID within a project. If already an ID, return as-is."""
+    # If it looks like an ID (alphanumeric, no spaces), assume it's an ID
+    if name_or_id and ' ' not in name_or_id and len(name_or_id) < 20:
+        # Could be an ID - but also could be a short name like "Now"
+        # Try to find by name first, fall back to treating as ID
+        sections = collect_paginated(api.get_sections(project_id=project_id))
+        name_lower = name_or_id.lower()
+        for s in sections:
+            if s.name.lower() == name_lower:
+                return s.id
+        # Not found by name - assume it's an ID
+        return name_or_id
+
+    # Search by name
+    sections = collect_paginated(api.get_sections(project_id=project_id))
+    name_lower = name_or_id.lower()
+    for s in sections:
+        if s.name.lower() == name_lower:
+            return s.id
+
+    print(f"Error: Section '{name_or_id}' not found in project", file=sys.stderr)
+    sys.exit(1)
+
+
 def resolve_assignee(api, project_id: str, name_or_email: str) -> str:
     """Resolve an assignee name/email to user ID."""
     collaborators = collect_paginated(api.get_collaborators(project_id))
@@ -165,14 +191,25 @@ def cmd_get_tasks(args):
             return ca.replace(tzinfo=None)  # datetime object
         tasks = [t for t in tasks if get_created(t) < cutoff]
 
-    output_json(tasks)
+    # Enrich tasks with comments (complete picture)
+    enriched = []
+    for t in tasks:
+        task_dict = to_dict(t)
+        comments = collect_paginated(api.get_comments(task_id=t.id))
+        task_dict['comments'] = [to_dict(c) for c in comments]
+        enriched.append(task_dict)
+
+    print(json.dumps(enriched, indent=2, default=str))
 
 
 def cmd_get_task(args):
-    """Get a single task."""
+    """Get a single task with comments."""
     api = get_api()
     task = api.get_task(args.id)
-    output_json(task)
+    task_dict = to_dict(task)
+    comments = collect_paginated(api.get_comments(task_id=args.id))
+    task_dict['comments'] = [to_dict(c) for c in comments]
+    print(json.dumps(task_dict, indent=2, default=str))
 
 
 def cmd_filter_tasks(args):
@@ -205,6 +242,65 @@ def cmd_add_task(args):
         priority=args.priority,
         due_string=args.due
     )
+    output_json(task)
+
+
+def cmd_update_task(args):
+    """Update an existing task."""
+    api = get_api()
+
+    # Resolve project name to ID if provided
+    project_id = args.project_id
+    if args.project:
+        project_id = resolve_project(api, args.project)
+
+    # Resolve section name to ID if provided
+    section_id = args.section_id
+    if args.section:
+        # Need a project context to resolve section name
+        if project_id:
+            # Moving to new project - resolve section in target project
+            resolve_project_id = project_id
+        else:
+            # Not moving - resolve section in task's current project
+            task = api.get_task(args.id)
+            resolve_project_id = task.project_id
+        section_id = resolve_section(api, resolve_project_id, args.section)
+
+    # Separate update fields from move fields
+    # update_task() handles: content, description, labels, priority, due
+    # move_task() handles: project_id, section_id, parent_id
+    update_kwargs = {}
+    if args.content:
+        update_kwargs['content'] = args.content
+    if args.description is not None:
+        update_kwargs['description'] = args.description
+    if args.priority:
+        update_kwargs['priority'] = args.priority
+    if args.due:
+        update_kwargs['due_string'] = args.due
+    if args.labels:
+        update_kwargs['labels'] = args.labels.split(",")
+
+    move_kwargs = {}
+    if project_id:
+        move_kwargs['project_id'] = project_id
+    if section_id:
+        move_kwargs['section_id'] = section_id
+
+    if not update_kwargs and not move_kwargs:
+        print("Error: No update parameters provided", file=sys.stderr)
+        sys.exit(1)
+
+    # Perform move first (if needed), then update
+    if move_kwargs:
+        api.move_task(args.id, **move_kwargs)
+
+    if update_kwargs:
+        api.update_task(args.id, **update_kwargs)
+
+    # Fetch and show the updated task
+    task = api.get_task(args.id)
     output_json(task)
 
 
@@ -310,6 +406,18 @@ def main():
     p.add_argument("--priority", type=int, choices=[1, 2, 3, 4], help="Priority (1=normal, 4=urgent)")
     p.add_argument("--due", help="Due date in natural language")
 
+    p = subparsers.add_parser("update", help="Update an existing task")
+    p.add_argument("id", help="Task ID")
+    p.add_argument("--content", help="New task content/title")
+    p.add_argument("--description", help="New description (use '' to clear)")
+    p.add_argument("--project-id", help="Move to project ID")
+    p.add_argument("--project", help="Move to project by name (e.g., '@Ping')")
+    p.add_argument("--section-id", help="Move to section ID")
+    p.add_argument("--section", help="Move to section by name (e.g., 'Now')")
+    p.add_argument("--labels", help="New comma-separated labels (replaces existing)")
+    p.add_argument("--priority", type=int, choices=[1, 2, 3, 4], help="Priority (1=normal, 4=urgent)")
+    p.add_argument("--due", help="Due date in natural language")
+
     p = subparsers.add_parser("comments", help="Get comments")
     p.add_argument("--task-id", help="Task ID")
     p.add_argument("--project-id", help="Project ID")
@@ -337,6 +445,7 @@ def main():
         "filter": cmd_filter_tasks,
         "done": cmd_complete_task,
         "add": cmd_add_task,
+        "update": cmd_update_task,
         "add-section": cmd_add_section,
         "comments": cmd_get_comments,
         "collaborators": cmd_get_collaborators,

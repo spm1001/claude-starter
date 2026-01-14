@@ -51,6 +51,52 @@ Still this skill, using patterns above:
 - Surface any detected patterns (overcommitment, scope creep, etc.)
 - Ask: "What's one thing you could decline this week?"
 
+## Inbox Triage Workflow
+
+When processing @Claude or any inbox project:
+
+### The Process
+
+```
+1. Get all items (comments included inline)
+   scripts/todoist.py tasks --project "@Claude"
+
+2. For EACH item, check .comments[] then decide:
+   - bead: Create issue, complete task
+   - skip: Complete task (context-lost or not actionable)
+   - move: Update task to different project/section
+   - do now: Handle immediately, complete task
+
+3. Execute:
+   - done <id>                           # Complete
+   - update <id> --project "@Ping"       # Move to project
+   - update <id> --section "Now"         # Move to section
+   - update <id> --content "better name" # Rename
+
+4. Report summary
+   "Processed X items: Y beaded, Z moved, W skipped"
+```
+
+### Reading Comments
+
+Comments are inline on each task as `.comments[]`. Look for:
+
+| Pattern | Meaning |
+|---------|---------|
+| `comments: []` | No hidden context — what you see is what you get |
+| `comments[].content` has text | UI-added progress notes |
+| `comments[].attachment` exists | File attached (PDF, image, etc.) |
+| `comments[].content` empty + attachment is HTML | Forwarded email body |
+
+### Common Triage Decisions
+
+| Signal | Likely Disposition |
+|--------|-------------------|
+| Has attachments in `.comments[]` | Worth investigating — bead or do |
+| Empty comments array | Probably quick capture — skip or do |
+| Clear next action | Do now or move to @Work |
+| Complex/multi-step | Bead it |
+
 ## When to Invoke Patterns
 
 **Proactive triggers:**

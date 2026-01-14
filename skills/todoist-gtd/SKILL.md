@@ -206,7 +206,7 @@ scripts/todoist.py projects | jq '.[] | select(.name == "@Claude")'
 scripts/todoist.py tasks --project-id "<claude-inbox-id>"
 ```
 
-**⚠️ TRIAGE CRITICAL:** Inbox items (especially forwarded emails) often have context in **comments**, not the task itself. ALWAYS run `comments --task-id <id>` before deciding to skip an item as "context-lost". See [references/PATTERNS.md](references/PATTERNS.md) for the full triage workflow.
+**Triage note:** Comments are included inline — check `.comments[]` for attachments and context before skipping items. See [references/PATTERNS.md](references/PATTERNS.md#inbox-triage-workflow) for the full workflow.
 
 ### Filter with Todoist Syntax
 ```bash
@@ -243,40 +243,36 @@ scripts/todoist.py tasks --project "@Wait" --created-before "2025-12-01"
 
 ## Data Model
 
-**Where metadata lives** — not everything is on the task object:
+**Task objects are complete.** The CLI returns tasks with comments inline:
 
-| Data | Location | CLI Query |
-|------|----------|-----------|
-| Task title | `content` field | `tasks` or `task <id>` |
-| Notes/details | `description` field | `task <id>` for full detail |
-| Due dates | `due` object | `tasks` output includes due info |
-| **Attachments** | **Comments** (not task!) | `comments --task-id <id>` |
-
-### Accessing Attachments
-
-Attachments live on comments, not tasks. This includes forwarded emails.
-
-```bash
-# Get comments for a task
-scripts/todoist.py comments --task-id "<task-id>"
-
-# Look for attachment fields in response
+```json
+{
+  "id": "...",
+  "content": "Add this to the Team Handbook",
+  "description": "",
+  "comments": [
+    { "content": "", "attachment": { "file_name": "document.pdf" } },
+    { "content": "Progress note from UI", "attachment": null }
+  ]
+}
 ```
 
-**Auth limitation:** Attachment URLs (`files.todoist.com`) require Todoist authentication. You cannot curl them directly — they redirect to an auth wall. If user needs attachment content, tell them to open the link in browser.
+| Data | Location |
+|------|----------|
+| Task title | `content` field |
+| Notes/details | `description` field |
+| Due dates | `due` object |
+| Attachments | `comments[].attachment` |
+| Progress notes | `comments[].content` |
 
 ### Forwarded Emails Pattern
 
 When emails are forwarded to a Todoist project's email address:
 - Subject → task `content`
-- Body → **comment** (not description!)
-- Attachments → attachment on that comment
+- Body → `comments[0]` with empty content, HTML attachment
+- Attachments → additional `comments[]` entries with attachments
 
-```bash
-# To get forwarded email content:
-scripts/todoist.py tasks --project-id "6cvq5WW3jGJ3Gp7P"  # Find the task
-scripts/todoist.py comments --task-id "<task-id>"         # Get email body + attachments
-```
+**Auth limitation:** Attachment URLs (`files.todoist.com`) require Todoist authentication. You cannot curl them directly — tell user to open in browser.
 
 ### Subtask Navigation
 
@@ -399,22 +395,13 @@ Surface these concerns when analyzing data:
    ```bash
    scripts/todoist.py tasks --project "@Claude"
    ```
+   Returns complete tasks with `.comments[]` inline — no separate calls needed.
 
 2. **Surface items:** "You have X items in @Claude..."
 
-3. **For triage:** Follow the workflow in [references/PATTERNS.md](references/PATTERNS.md#inbox-triage-workflow):
-   - Check comments for EACH item before deciding (forwarded emails hide context there)
-   - Decide: bead, skip, move, or do now
-   - Execute with `done`, `update --project`, etc.
+3. **For each item:** Check `.comments[]` for attachments/context, then decide: bead, skip, move, or do now.
 
-### Email Forwarding
-
-When emails are forwarded to a Todoist project's email address:
-- Subject → task `content` (often cryptic)
-- Body → **comment** (the actual context!)
-- Attachments → on that comment
-
-**⚠️ A forwarded email with no comments checked = context lost.** Always run `comments --task-id <id>` before skipping.
+See [references/PATTERNS.md](references/PATTERNS.md#inbox-triage-workflow) for the full triage workflow.
 
 ## Common Analysis Workflows
 
@@ -466,7 +453,7 @@ Surface: "Alex has X outcomes, Y waiting-fors. [Summary of each]"
 | @Claude inbox | `scripts/todoist.py tasks --project "@Claude"` |
 | Today's tasks | `scripts/todoist.py filter "today"` |
 
-**Note:** CLI shows ALL tasks by default — no hidden filtering.
+**Note:** `tasks` and `task` return complete objects with `.comments[]` inline. `filter` returns tasks only (no comments).
 
 ### Key Write Operations
 
