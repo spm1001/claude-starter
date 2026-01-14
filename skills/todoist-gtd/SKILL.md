@@ -453,7 +453,7 @@ Surface: "Alex has X outcomes, Y waiting-fors. [Summary of each]"
 | @Claude inbox | `scripts/todoist.py tasks --project "@Claude"` |
 | Today's tasks | `scripts/todoist.py filter "today"` |
 
-**Note:** `tasks` and `task` return complete objects with `.comments[]` inline. `filter` returns tasks only (no comments).
+**Note:** `tasks` and `task` return complete objects with `.comments[]` inline. `filter` returns tasks only (no comments — intentional, as filters can span projects and N+1 API calls would be slow).
 
 ### Key Write Operations
 
