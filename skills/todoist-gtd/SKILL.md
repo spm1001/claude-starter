@@ -47,10 +47,20 @@ Weekly review triggers a **three-phase workflow:**
 
 ## CLI Setup
 
-The CLI lives at `scripts/todoist.py` in this skill folder. Run via the global skill venv:
+The CLI lives at `scripts/todoist.py` in this skill folder. A wrapper script provides a shorter path:
 
 ```bash
+# Short form (wrapper in ~/.claude/scripts/)
+todoist <command>
+
+# Long form (if wrapper not in PATH)
 ~/.claude/.venv/bin/python scripts/todoist.py <command>
+```
+
+**Ensure `~/.claude/scripts` is in your PATH** for the short form to work:
+```bash
+# Add to ~/.zshrc or ~/.bashrc:
+export PATH="$HOME/.claude/scripts:$PATH"
 ```
 
 ### Authentication
@@ -239,6 +249,14 @@ scripts/todoist.py tasks --project "Areas of Focus" --section-id "<id>" --assign
 
 # Filter by creation date (for staleness checks)
 scripts/todoist.py tasks --project "@Wait" --created-before "2025-12-01"
+
+# Filter by age (convenience alternative to --created-before)
+scripts/todoist.py tasks --project "@Wait" --older-than 30d   # 30 days
+scripts/todoist.py tasks --project "@Wait" --older-than 2w    # 2 weeks
+scripts/todoist.py tasks --project "@Wait" --older-than 3m    # 3 months
+
+# Include section names in output (avoids manual section_id lookup)
+scripts/todoist.py tasks --project "@Work" --include-section-name
 ```
 
 ## Data Model
@@ -293,6 +311,21 @@ When emails are forwarded to a Todoist project's email address:
 ```bash
 scripts/todoist.py tasks --label "waiting-for"  # Works if label exists
 # But no: list-all-labels                       # Doesn't exist
+```
+
+### Cross-Workspace Limitation
+
+**Moving tasks between personal and shared projects fails.** The `move_task` API cannot move tasks across workspace boundaries (personal account ↔ MIT shared workspace).
+
+**Workaround:** Complete the task in the source project, then recreate it in the target project. History is preserved in both locations.
+
+```bash
+# This fails:
+scripts/todoist.py update <task-id> --project "Someday/Maybe"  # Error if crossing workspace
+
+# Workaround:
+scripts/todoist.py add "Task content" --project "Someday/Maybe"
+scripts/todoist.py done <old-task-id>
 ```
 
 ## Write Operation Guardrails
@@ -444,11 +477,12 @@ Surface: "Alex has X outcomes, Y waiting-fors. [Summary of each]"
 | Query | CLI Command |
 |-------|-------------|
 | All projects | `scripts/todoist.py projects` |
-| All outcomes | `scripts/todoist.py sections --project-id "<desired-outcomes>"` |
+| All outcomes | `scripts/todoist.py sections --project "Desired Outcomes Q1"` |
 | Tasks under outcome | `scripts/todoist.py tasks --section-id "<outcome-id>"` |
+| Tasks with section names | `scripts/todoist.py tasks --project "@Work" --include-section-name` |
 | Person's work | `scripts/todoist.py tasks --project "X" --assignee "Name"` |
 | Waiting-fors | `scripts/todoist.py tasks --project "@Wait"` |
-| Stale waiting-fors | `scripts/todoist.py tasks --project "@Wait" --created-before "YYYY-MM-DD"` |
+| Stale waiting-fors | `scripts/todoist.py tasks --project "@Wait" --older-than 30d` |
 | Someday/Maybe | `scripts/todoist.py tasks --label "someday-maybe"` |
 | @Claude inbox | `scripts/todoist.py tasks --project "@Claude"` |
 | Today's tasks | `scripts/todoist.py filter "today"` |
@@ -459,8 +493,8 @@ Surface: "Alex has X outcomes, Y waiting-fors. [Summary of each]"
 
 | Operation | CLI Command |
 |-----------|-------------|
-| Create outcome | `scripts/todoist.py add-section "name" --project-id "<id>"` |
-| Create task | `scripts/todoist.py add "content" --section-id "<id>"` |
+| Create outcome | `scripts/todoist.py add-section "name" --project "Desired Outcomes Q1"` |
+| Create task | `scripts/todoist.py add "content" --project "@Work" --section "Now"` |
 | Complete task | `scripts/todoist.py done "<task-id>"` |
 | Rename task | `scripts/todoist.py update "<task-id>" --content "new name"` |
 | Move to project | `scripts/todoist.py update "<task-id>" --project "@Ping"` |

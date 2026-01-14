@@ -10,14 +10,15 @@ Commands:
     auth --status       Check authentication status
     auth --manual       Use manual mode (for SSH)
     projects            List all projects
-    sections            List sections (--project-id to filter)
+    sections            List sections (--project or --project-id to filter)
     tasks               List tasks with comments inline
+                        Supports --project, --section, --older-than, --include-section-name
     task ID             Get single task with comments inline
     filter QUERY        Filter tasks (no comments - can return many)
     done ID             Complete a task
-    add CONTENT         Create a new task
+    add CONTENT         Create a new task (--project, --section for placement)
     update ID           Update/move task (--content, --project, --section, etc.)
-    add-section NAME    Create a new section (requires --project-id)
+    add-section NAME    Create a new section (--project or --project-id)
     comments            Get comments standalone (rarely needed)
     collaborators       Get project collaborators (requires --project-id)
 
@@ -30,6 +31,7 @@ Authentication:
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from typing import Any
@@ -166,9 +168,17 @@ def cmd_get_tasks(args):
     if args.project:
         project_id = resolve_project(api, args.project)
 
+    # Resolve section name to ID if provided
+    section_id = args.section_id
+    if args.section:
+        if not project_id:
+            print("Error: --section requires --project or --project-id", file=sys.stderr)
+            sys.exit(1)
+        section_id = resolve_section(api, project_id, args.section)
+
     tasks = collect_paginated(api.get_tasks(
         project_id=project_id,
-        section_id=args.section_id,
+        section_id=section_id,
         label=args.label
     ))
 
@@ -181,14 +191,30 @@ def cmd_get_tasks(args):
         tasks = [t for t in tasks if getattr(t, 'assignee_id', None) == assignee_id]
 
     # Filter by creation date if provided (client-side filter)
-    if args.created_before:
-        from datetime import datetime
-        cutoff = datetime.fromisoformat(args.created_before + "T23:59:59")
+    if args.created_before and args.older_than:
+        print("Error: Cannot use both --older-than and --created-before", file=sys.stderr)
+        sys.exit(1)
+
+    if args.created_before or args.older_than:
+        from datetime import datetime, timedelta
+
         def get_created(t):
             ca = t.created_at
             if isinstance(ca, str):
                 return datetime.fromisoformat(ca[:19])
             return ca.replace(tzinfo=None)  # datetime object
+
+        if args.older_than:
+            match = re.match(r'(\d+)([dwm])', args.older_than)
+            if not match:
+                print("Error: --older-than format should be like '30d', '2w', or '3m'", file=sys.stderr)
+                sys.exit(1)
+            num, unit = int(match.group(1)), match.group(2)
+            days = num * {'d': 1, 'w': 7, 'm': 30}[unit]
+            cutoff = datetime.now() - timedelta(days=days)
+        else:
+            cutoff = datetime.fromisoformat(args.created_before + "T23:59:59")
+
         tasks = [t for t in tasks if get_created(t) < cutoff]
 
     # Enrich tasks with comments (only fetch if task has any — avoids unnecessary API calls)
@@ -201,6 +227,16 @@ def cmd_get_tasks(args):
         else:
             task_dict['comments'] = []
         enriched.append(task_dict)
+
+    # Optionally include section names (requires extra API call)
+    if args.include_section_name:
+        if not project_id:
+            print("Warning: --include-section-name requires --project to work, ignoring", file=sys.stderr)
+        else:
+            sections = {s.id: s.name for s in collect_paginated(api.get_sections(project_id=project_id))}
+            for task_dict in enriched:
+                sid = task_dict.get('section_id')
+                task_dict['section_name'] = sections.get(sid) if sid else None
 
     print(json.dumps(enriched, indent=2, default=str))
 
@@ -236,13 +272,26 @@ def cmd_add_task(args):
     """Create a new task."""
     api = get_api()
 
+    # Resolve project name to ID if provided
+    project_id = args.project_id
+    if args.project:
+        project_id = resolve_project(api, args.project)
+
+    # Resolve section name to ID if provided
+    section_id = args.section_id
+    if args.section:
+        if not project_id:
+            print("Error: --section requires --project or --project-id", file=sys.stderr)
+            sys.exit(1)
+        section_id = resolve_section(api, project_id, args.section)
+
     labels = args.labels.split(",") if args.labels else None
 
     task = api.add_task(
         content=args.content,
         description=args.description,
-        project_id=args.project_id,
-        section_id=args.section_id,
+        project_id=project_id,
+        section_id=section_id,
         parent_id=args.parent_id,
         labels=labels,
         priority=args.priority,
@@ -300,7 +349,14 @@ def cmd_update_task(args):
 
     # Perform move first (if needed), then update
     if move_kwargs:
-        api.move_task(args.id, **move_kwargs)
+        try:
+            api.move_task(args.id, **move_kwargs)
+        except Exception as e:
+            if "400" in str(e):
+                print("Error: Cannot move task - this often happens when moving between personal and shared workspace projects.", file=sys.stderr)
+                print("Workaround: Complete the task and recreate it in the target project.", file=sys.stderr)
+                sys.exit(1)
+            raise
 
     if update_kwargs:
         api.update_task(args.id, **update_kwargs)
@@ -314,13 +370,18 @@ def cmd_add_section(args):
     """Create a new section."""
     api = get_api()
 
-    if not args.project_id:
-        print("Error: --project-id is required for add-section", file=sys.stderr)
+    # Resolve project name to ID if provided
+    project_id = args.project_id
+    if args.project:
+        project_id = resolve_project(api, args.project)
+
+    if not project_id:
+        print("Error: --project-id or --project is required for add-section", file=sys.stderr)
         sys.exit(1)
 
     section = api.add_section(
         name=args.name,
-        project_id=args.project_id
+        project_id=project_id
     )
     output_json(section)
 
@@ -389,9 +450,12 @@ def main():
     p.add_argument("--project-id", help="Filter by project ID")
     p.add_argument("--project", help="Filter by project name (e.g., '@Wait')")
     p.add_argument("--section-id", help="Filter by section ID")
+    p.add_argument("--section", help="Filter by section name (requires --project)")
     p.add_argument("--label", help="Filter by label")
     p.add_argument("--assignee", help="Filter by assignee name (requires --project or --project-id)")
     p.add_argument("--created-before", help="Filter by creation date (YYYY-MM-DD)")
+    p.add_argument("--older-than", help="Filter by age (e.g., '30d', '2w', '3m')")
+    p.add_argument("--include-section-name", action="store_true", help="Include section name in output")
 
     p = subparsers.add_parser("task", help="Get a single task")
     p.add_argument("id", help="Task ID")
@@ -406,7 +470,9 @@ def main():
     p.add_argument("content", help="Task content/title")
     p.add_argument("--description", help="Task description")
     p.add_argument("--project-id", help="Project ID")
+    p.add_argument("--project", help="Project by name (e.g., '@Work', 'Someday/Maybe')")
     p.add_argument("--section-id", help="Section ID")
+    p.add_argument("--section", help="Section by name (e.g., 'Now') - requires --project")
     p.add_argument("--parent-id", help="Parent task ID (for subtasks)")
     p.add_argument("--labels", help="Comma-separated labels")
     p.add_argument("--priority", type=int, choices=[1, 2, 3, 4], help="Priority (1=normal, 4=urgent)")
@@ -433,7 +499,8 @@ def main():
 
     p = subparsers.add_parser("add-section", help="Create a new section (outcome)")
     p.add_argument("name", help="Section name")
-    p.add_argument("--project-id", required=True, help="Project ID")
+    p.add_argument("--project-id", help="Project ID")
+    p.add_argument("--project", help="Project by name (e.g., 'Desired Outcomes Q1')")
 
     args = parser.parse_args()
 
