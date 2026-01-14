@@ -191,12 +191,15 @@ def cmd_get_tasks(args):
             return ca.replace(tzinfo=None)  # datetime object
         tasks = [t for t in tasks if get_created(t) < cutoff]
 
-    # Enrich tasks with comments (complete picture)
+    # Enrich tasks with comments (only fetch if task has any — avoids unnecessary API calls)
     enriched = []
     for t in tasks:
         task_dict = to_dict(t)
-        comments = collect_paginated(api.get_comments(task_id=t.id))
-        task_dict['comments'] = [to_dict(c) for c in comments]
+        if getattr(t, 'comment_count', 0) > 0:
+            comments = collect_paginated(api.get_comments(task_id=t.id))
+            task_dict['comments'] = [to_dict(c) for c in comments]
+        else:
+            task_dict['comments'] = []
         enriched.append(task_dict)
 
     print(json.dumps(enriched, indent=2, default=str))
@@ -207,8 +210,11 @@ def cmd_get_task(args):
     api = get_api()
     task = api.get_task(args.id)
     task_dict = to_dict(task)
-    comments = collect_paginated(api.get_comments(task_id=args.id))
-    task_dict['comments'] = [to_dict(c) for c in comments]
+    if getattr(task, 'comment_count', 0) > 0:
+        comments = collect_paginated(api.get_comments(task_id=args.id))
+        task_dict['comments'] = [to_dict(c) for c in comments]
+    else:
+        task_dict['comments'] = []
     print(json.dumps(task_dict, indent=2, default=str))
 
 
