@@ -7,7 +7,7 @@ Team onboarding repo for Claude Code. The "front door" for getting set up.
 When a user says "help me set up" or runs `/setup`, use the **setup skill** to configure their environment. The skill handles:
 
 1. **Tier 1** (this repo): Document skills + Todoist GTD
-2. **Tier 2** (claude-advanced): Session lifecycle (/open, /ground, /close) + Beads
+2. **Tier 2** (claude-suite): Session lifecycle (/open, /close) + Beads
 3. **Tier 3** (claude-mem): Searchable memory across sessions
 
 See `skills/setup/SKILL.md` for detailed instructions.

@@ -25,7 +25,7 @@ The installer skill for Claude Code. Configures your environment with skills, sc
 | Tier | What You Get | Repo |
 |------|--------------|------|
 | **1** | Document skills (docx, pdf, xlsx) + Todoist GTD | This repo (claude-starter) |
-| **2** | Session lifecycle (/open, /ground, /close) + Beads | claude-advanced |
+| **2** | Session lifecycle (/open, /close) + Beads | claude-suite |
 | **3** | Searchable memory across all sessions | claude-mem |
 
 Each tier builds on the previous. Tier 2 requires Tier 1. Tier 3 requires Tier 2.
@@ -91,7 +91,7 @@ Use AskUserQuestion to determine scope:
 Which setup level do you want?
 
 1. Tier 1 — Document skills + Todoist (basics)
-2. Tier 2 — Add session lifecycle (/open, /ground, /close) + Beads
+2. Tier 2 — Add session lifecycle (/open, /close) + Beads
 3. Tier 3 — Add searchable memory system (full stack)
 ```
 
@@ -171,33 +171,31 @@ fi
 
 ### Symlink Skills
 
-From `~/Repos/claude-advanced/skills/` to `~/.claude/skills/`:
+From `~/Repos/claude-suite/skills/` to `~/.claude/skills/`:
 
 | Skill | Source Path | Target |
 |-------|-------------|--------|
 | session-opening | skills/session-opening | ~/.claude/skills/session-opening |
-| session-grounding | skills/session-grounding | ~/.claude/skills/session-grounding |
 | session-closing | skills/session-closing | ~/.claude/skills/session-closing |
 | beads | skills/beads | ~/.claude/skills/beads |
 
 ```bash
-ADVANCED_REPO="$HOME/Repos/claude-advanced"
+SUITE_REPO="$HOME/Repos/claude-suite"
 
-ln -sf "$ADVANCED_REPO/skills/session-opening" ~/.claude/skills/session-opening
-ln -sf "$ADVANCED_REPO/skills/session-grounding" ~/.claude/skills/session-grounding
-ln -sf "$ADVANCED_REPO/skills/session-closing" ~/.claude/skills/session-closing
-ln -sf "$ADVANCED_REPO/skills/beads" ~/.claude/skills/beads
+ln -sf "$SUITE_REPO/skills/session-opening" ~/.claude/skills/session-opening
+ln -sf "$SUITE_REPO/skills/session-closing" ~/.claude/skills/session-closing
+ln -sf "$SUITE_REPO/skills/beads" ~/.claude/skills/beads
 ```
 
 ### Symlink Scripts
 
-From `~/Repos/claude-advanced/scripts/` to `~/.claude/scripts/`:
+From `~/Repos/claude-suite/scripts/` to `~/.claude/scripts/`:
 
 ```bash
-ln -sf "$ADVANCED_REPO/scripts/open-context.sh" ~/.claude/scripts/open-context.sh
-ln -sf "$ADVANCED_REPO/scripts/close-context.sh" ~/.claude/scripts/close-context.sh
-ln -sf "$ADVANCED_REPO/scripts/close-extraction.sh" ~/.claude/scripts/close-extraction.sh
-ln -sf "$ADVANCED_REPO/scripts/check-home.sh" ~/.claude/scripts/check-home.sh
+ln -sf "$SUITE_REPO/scripts/open-context.sh" ~/.claude/scripts/open-context.sh
+ln -sf "$SUITE_REPO/scripts/close-context.sh" ~/.claude/scripts/close-context.sh
+ln -sf "$SUITE_REPO/scripts/close-extraction.sh" ~/.claude/scripts/close-extraction.sh
+ln -sf "$SUITE_REPO/scripts/check-home.sh" ~/.claude/scripts/check-home.sh
 ```
 
 ### Symlink Hooks
@@ -379,7 +377,7 @@ To remove a tier:
 rm ~/.claude/skills/{docx,pdf,xlsx,todoist-gtd,setup}
 
 # Remove Tier 2 symlinks
-rm ~/.claude/skills/{session-opening,session-grounding,session-closing,beads}
+rm ~/.claude/skills/{session-opening,session-closing,beads}
 rm ~/.claude/scripts/{open-context.sh,close-context.sh,close-extraction.sh,check-home.sh}
 rm ~/.claude/hooks/session-start.sh
 

@@ -201,7 +201,7 @@ Claude will:
 | Tier | What You Get | Source |
 |------|--------------|--------|
 | **1** | Document skills (docx, pdf, xlsx) + Todoist GTD | This repo |
-| **2** | Session lifecycle (`/open`, `/ground`, `/close`) + Beads | claude-advanced |
+| **2** | Session lifecycle (`/open`, `/close`) + Beads | claude-suite |
 | **3** | Searchable memory across all sessions | claude-mem |
 
 ## Troubleshooting
